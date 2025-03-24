@@ -20,7 +20,6 @@
 # echo "Recreating Kafka topic $KAFKA_TOPIC..."
 # kafka-topics.sh --create --topic "$KAFKA_TOPIC" --bootstrap-server "$BOOTSTRAP_SERVER" --partitions 1 --replication-factor 1
 
-# --------------- 启动 Spark Streaming Job ---------------
 echo "Starting Spark Streaming job..."
 spark-submit \
   --class myreddit.sparkstreaming.SparkStreamingJob \
@@ -28,15 +27,14 @@ spark-submit \
   --packages org.apache.spark:spark-sql-kafka-0-10_2.13:3.4.4,\
 org.apache.spark:spark-token-provider-kafka-0-10_2.13:3.4.4,\
 org.xerial:sqlite-jdbc:3.36.0.3,\
-com.lihaoyi:upickle_2.13:1.4.0 \
+com.lihaoyi:upickle_2.13:1.4.0,\
+com.softwaremill.sttp.client3:core_2.13:3.8.3 \
   /Users/kaiyuyang/Projects/sentiment-analysis-tool/spark-streaming/target/scala-2.13/sparkstreamingjob_2.13-1.0.jar &
 
-# 将 Spark Streaming 进程置于后台并获取其PID（如果需要后面控制或监控）
 SPARK_STREAMING_PID=$!
 echo "Spark Streaming job started with PID: $SPARK_STREAMING_PID"
 
-# --------------- 启动 Producer ---------------
-# 先稍微等待几秒，让 Spark Streaming 先初始化
+# 可以先稍等一下，让Spark完全启动
 sleep 5
 
 echo "Starting Producer..."
