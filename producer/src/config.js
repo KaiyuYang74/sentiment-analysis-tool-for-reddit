@@ -14,4 +14,4 @@ export const REDDIT_HOT_POSTS_URL =
 // 每个贴子评论的limit
 export const COMMENT_LIMIT = 20;
 
-export const FETCH_INTERVAL_MS = 10 * 60 * 1000; // 每10分钟执行一次
+export const FETCH_INTERVAL_MS = 1 * 60 * 1000; // 每1分钟执行一次

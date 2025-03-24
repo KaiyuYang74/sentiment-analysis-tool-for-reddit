@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+#
+# start_pipeline.sh
+#
+# 先启动 Spark Streaming，再启动 Producer。
+# 可选地清空数据库和删除重建 Kafka topic。
+
+# --------------- 可选操作：清空数据库 ---------------
+# 是否每次都要重新来过？若只在开发/测试时用，可取消注释以下两行：
+# echo "Clearing existing SQLite database..."
+# rm -f /Users/kaiyuyang/Desktop/redditData.db
+
+# --------------- 可选操作：重置/删除 Kafka Topic ---------------
+# 若要删除并重建 Topic，需要先确保 Kafka 已启动，并且知道bootstrap server。
+# 下面操作仅供示例，注意和你的实际集群命令行工具对应：
+# KAFKA_TOPIC="reddit_comments"
+# BOOTSTRAP_SERVER="localhost:9092"
+# echo "Deleting Kafka topic $KAFKA_TOPIC..."
+# kafka-topics.sh --delete --topic "$KAFKA_TOPIC" --bootstrap-server "$BOOTSTRAP_SERVER"
+# echo "Recreating Kafka topic $KAFKA_TOPIC..."
+# kafka-topics.sh --create --topic "$KAFKA_TOPIC" --bootstrap-server "$BOOTSTRAP_SERVER" --partitions 1 --replication-factor 1
+
+# --------------- 启动 Spark Streaming Job ---------------
+echo "Starting Spark Streaming job..."
+spark-submit \
+  --class myreddit.sparkstreaming.SparkStreamingJob \
+  --master "local[*]" \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.13:3.4.4,\
+org.apache.spark:spark-token-provider-kafka-0-10_2.13:3.4.4,\
+org.xerial:sqlite-jdbc:3.36.0.3,\
+com.lihaoyi:upickle_2.13:1.4.0 \
+  /Users/kaiyuyang/Projects/sentiment-analysis-tool/spark-streaming/target/scala-2.13/sparkstreamingjob_2.13-1.0.jar &
+
+# 将 Spark Streaming 进程置于后台并获取其PID（如果需要后面控制或监控）
+SPARK_STREAMING_PID=$!
+echo "Spark Streaming job started with PID: $SPARK_STREAMING_PID"
+
+# --------------- 启动 Producer ---------------
+# 先稍微等待几秒，让 Spark Streaming 先初始化
+sleep 5
+
+echo "Starting Producer..."
+cd /Users/kaiyuyang/Projects/sentiment-analysis-tool/producer || exit
+node src/index.js
