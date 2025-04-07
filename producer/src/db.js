@@ -14,6 +14,14 @@ export async function initDB() {
         });
         // 这里可以做一些检查，比如是否已经建表
         // 不过你在问题描述中已经建好表，所以此处略过
+
+        // =============== 新增：如果表不存在，则自动创建 ===============
+        await dbInstance.run(`
+          CREATE TABLE IF NOT EXISTS user_subreddits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subreddit TEXT UNIQUE NOT NULL
+          )
+        `);
     }
     return dbInstance;
 }

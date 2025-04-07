@@ -177,12 +177,15 @@ object SparkStreamingJob {
       aggregatedSentiment: Map[String, String]
     ): Unit = {
 
-    val dbPath = "jdbc:sqlite:/Users/kaiyuyang/Desktop/redditData.db"
-    var conn: Connection = null
+    val dbPath = "jdbc:sqlite:/Users/kaiyuyang/Desktop/redditData.db?journal_mode=WAL&busy_timeout=60000"
+    var conn: Connection = DriverManager.getConnection(dbPath)
 
     try {
-      Class.forName("org.sqlite.JDBC")
-      conn = DriverManager.getConnection(dbPath)
+      val statement = conn.createStatement()
+      statement.execute("PRAGMA journal_mode = WAL")
+      statement.execute("PRAGMA busy_timeout = 60000")
+      statement.close()
+      
       conn.setAutoCommit(false)
 
       // 准备查询现有词频

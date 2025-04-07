@@ -1,0 +1,13 @@
+{
+    "name": "sentiment-analysis-producer",
+    "version": "1.0.0",
+    "type": "module",
+    "dependencies": {
+        "kafkajs": "^2.2.4",
+        "node-fetch": "^3.3.2",
+        "sqlite": "^5.1.1",
+        "sqlite3": "^5.1.7",
+        "express": "^4.18.2",
+        "cors": "^2.8.5"
+    }
+}

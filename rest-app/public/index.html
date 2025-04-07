@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Subreddit Manager</title>
+</head>
+<body>
+  <h1>Subreddit Manager</h1>
+
+  <!-- 1) 显示当前已添加的subreddits -->
+  <div>
+    <h2>Subreddits being monitored</h2>
+    <ul id="subreddit-list"></ul>
+  </div>
+
+  <!-- 2) 添加新的subreddit -->
+  <div>
+    <h2>Add New Subreddit</h2>
+    <input type="text" id="subreddit-input" placeholder="e.g. news" />
+    <button id="add-btn">Add</button>
+  </div>
+
+  <!-- 3) 分析结果 -->
+  <div>
+    <h2>Analysis Results</h2>
+    <button id="load-results-btn">Load Results</button>
+    <div id="results-container"></div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
