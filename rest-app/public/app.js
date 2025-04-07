@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       table.border = '1';
 
       const thead = document.createElement('thead');
-      thead.innerHTML = `\n    <tr>\n      <th>Post ID</th>\n      <th>Top 5 Word Freq</th>\n      <th>Sentiment</th>\n      <th>Updated Time</th>\n    </tr>\n  `;
+      thead.innerHTML = `\n    <tr>\n      <th>Post ID</th>\n      <th>Title</th>\n      <th>Top 5 Word Freq</th>\n      <th>Sentiment</th>\n      <th>Updated Time</th>\n    </tr>\n  `;
       table.appendChild(thead);
 
       const tbody = document.createElement('tbody');
@@ -93,16 +93,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       grouped[sub].forEach(row => {
         const tr = document.createElement('tr');
         const tdPostId = document.createElement('td');
+        const tdTitle = document.createElement('td');
         const tdFreq = document.createElement('td');
         const tdSentiment = document.createElement('td');
         const tdUpdated = document.createElement('td');
 
         tdPostId.textContent = row.post_id;
+        let displayedTitle = row.title || "";
+        if (displayedTitle.length > 40) {
+          displayedTitle = displayedTitle.slice(0, 40) + "...";
+        }
+        tdTitle.textContent = displayedTitle;
         tdFreq.textContent = formatTopFiveFreq(row.word_freq_json);
         tdSentiment.textContent = row.sentiment_result;
         tdUpdated.textContent = row.updated_time;
 
         tr.appendChild(tdPostId);
+        tr.appendChild(tdTitle);
         tr.appendChild(tdFreq);
         tr.appendChild(tdSentiment);
         tr.appendChild(tdUpdated);

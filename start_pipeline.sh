@@ -50,5 +50,5 @@ sleep 5
 
 echo "Starting Producer..."
 export NODE_TLS_REJECT_UNAUTHORIZED=0
-cd /Users/kaiyuyang/Projects/sentiment-analysis-tool/producer || exit
+cd /Users/kaiyuyang/Desktop/sentiment-analysis-tool/producer || exit
 node src/index.js

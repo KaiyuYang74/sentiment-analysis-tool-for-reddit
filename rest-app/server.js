@@ -52,6 +52,7 @@ app.get("/api/results", async (req, res) => {
     const rows = await db.all(`
       SELECT
         a.post_id,
+        p.title,
         p.subreddit,
         a.word_freq_json,
         a.sentiment_result,
