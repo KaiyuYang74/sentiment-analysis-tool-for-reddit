@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter
 
 import upickle.default._
 
-// 引入 STTP
+// Import STTP
 import sttp.client3._
 import sttp.model.MediaType
 
@@ -28,13 +28,13 @@ object SparkStreamingJob {
 
   def main(args: Array[String]): Unit = {
 
-    // 1) 初始化Spark
+    // 1) Initialize Spark
     val spark = SparkSession.builder()
       .appName("SparkStreamingJob")
-      // 如果你要在本地测试，可加 .master("local[*]")
+      // If testing locally, add .master("local[*]")
       .getOrCreate()
 
-    // 2) 从Kafka读取 reddit_comments 话题的数据
+    // 2) Read from Kafka topic 'reddit_comments'
     val kafkaBootstrapServers = "localhost:9092"
     val kafkaTopic = "reddit_comments"
 
@@ -45,19 +45,19 @@ object SparkStreamingJob {
       .option("startingOffsets", "latest")
       .load()
 
-    // 仅保留value字段（字节数组 -> String）
+    // Keep only value field (byte array -> String)
     val dfWithJsonStr = rawDF.selectExpr("CAST(value AS STRING) as jsonStr")
 
-    // 3) 在foreachBatch里处理
+    // 3) Process in foreachBatch
     val query = dfWithJsonStr.writeStream
-      .trigger(Trigger.ProcessingTime("30 seconds")) // 每30秒触发一次微批
+      .trigger(Trigger.ProcessingTime("30 seconds")) // Trigger micro-batch every 30 seconds
       .foreachBatch { (batchDF: DataFrame, batchId: Long) =>
         val redditComments = batchDF.collect().flatMap { row =>
           val jsonStr = row.getAs[String]("jsonStr")
           parseJsonToRedditComment(jsonStr)
         }
 
-        // 对评论做分词统计
+        // Word frequency analysis on comments
         val aggregatedWordFreq: Map[String, Map[String, Long]] =
           redditComments.groupBy(_.post_id).map { case (pid, comments) =>
             val allWords = comments.flatMap { cm => tokenizeWords(cm.body) }
@@ -65,14 +65,14 @@ object SparkStreamingJob {
             (pid, freqMap)
           }
 
-        // ============ 情感分析部分 ============
-        // 逐条分析，然后取平均等逻辑
+        // ============ Sentiment Analysis ============
+        // Analyze each comment, then calculate average
         val aggregatedSentiment: Map[String, String] =
         redditComments.groupBy(_.post_id).map { case (pid, comments) =>
-            // 逐条分析：对每条评论调用 analyzeSentiment
+            // Process each comment: call analyzeSentiment
             val numericScores = comments.map { cm =>
             val label = analyzeSentiment(cm.body)
-            // 将情感标签映射为数值分数
+            // Map sentiment label to numeric score
             val score = label match {
                 case "positive" => 1.0
                 case "negative" => -1.0
@@ -81,10 +81,10 @@ object SparkStreamingJob {
             score
             }
 
-            // 取所有评论分数的平均值
+            // Calculate average of all comment scores
             val avgScore = if (numericScores.nonEmpty) numericScores.sum / numericScores.size else 0.0
 
-            // 根据平均分映射回标签，可根据实际需求调整阈值
+            // Map average score back to label, adjust thresholds as needed
             val sentimentLabel = if (avgScore > 0.1) {
             "positive"
             } else if (avgScore < -0.1) {
@@ -96,7 +96,7 @@ object SparkStreamingJob {
             (pid, sentimentLabel)
         }
 
-        // 写入数据库：包含词频和sentiment
+        // Write to database: word frequency and sentiment
         updateAnalysisResults(aggregatedWordFreq, aggregatedSentiment)
       }
       .start()
@@ -105,7 +105,7 @@ object SparkStreamingJob {
     spark.stop()
   }
 
-  // ========== JSON 解析(不变) ==========
+  // ========== JSON Parsing (unchanged) ==========
   def parseJsonToRedditComment(jsonStr: String): Option[RedditComment] = {
     try {
       val rc = read[RedditComment](jsonStr)
@@ -117,7 +117,7 @@ object SparkStreamingJob {
     }
   }
 
-  // ========== 简单分词 ==========
+  // ========== Simple Tokenization ==========
   def tokenizeWords(text: String): Seq[String] = {
     if (text == null || text.isEmpty) return Seq.empty
     text
@@ -128,15 +128,15 @@ object SparkStreamingJob {
   }
 
   /**
-    * 通过 HTTP 调用 Python REST 服务，获取情感结果。
-    * 返回值： "positive" / "negative" / "neutral" / 其他自定义。
-    * 可根据需要映射到数值等。
+    * Call Python REST service via HTTP to get sentiment results.
+    * Return values: "positive" / "negative" / "neutral" / others.
+    * Can be mapped to numeric values if needed.
     */
   def analyzeSentiment(body: String): String = {
-    // 若空文本，直接返回 "neutral" 或其他占位
+    // For empty text, return "neutral" or other placeholder
     if(body == null || body.trim.isEmpty) return "neutral"
 
-    // 构造请求
+    // Build request
     val sentimentUrl = "http://localhost:5001/api/sentiment"
     val requestBody = ujson.Obj("text" -> body).toString()
     val backend = HttpURLConnectionBackend()
@@ -148,14 +148,14 @@ object SparkStreamingJob {
       .send(backend)
 
     if (response.isSuccess) {
-      // 解析返回的 JSON: {"sentiment":"positive"} / "negative"/"neutral" ...
+      // Parse returned JSON: {"sentiment":"positive"} / "negative"/"neutral" ...
       try {
-// 从Either里取出成功或错误字符串
+// Extract success or error string from Either
             val responseBody: String = response.body.fold(
-            err => err,   // 如果是Left，返回错误字符串
-            ok  => ok     // 如果是Right，返回成功字符串
+            err => err,   // If Left, return error string
+            ok  => ok     // If Right, return success string
             )
-            // 然后解析
+            // Then parse
             val json = ujson.read(responseBody)
         json("sentiment").str
       } catch {
@@ -168,9 +168,9 @@ object SparkStreamingJob {
   }
 
   /**
-    * 将词频和情感结果写入analysis_results表。
+    * Write word frequency and sentiment results to analysis_results table.
     * @param aggregatedWordFreq   Map[post_id, Map[word, freq]]
-    * @param aggregatedSentiment  Map[post_id, String]，存储情感标签
+    * @param aggregatedSentiment  Map[post_id, String], storing sentiment labels
     */
   def updateAnalysisResults(
       aggregatedWordFreq: Map[String, Map[String, Long]],
@@ -188,12 +188,12 @@ object SparkStreamingJob {
       
       conn.setAutoCommit(false)
 
-      // 准备查询现有词频
+      // Prepare query for existing word frequencies
       val selectStmt = conn.prepareStatement(
         "SELECT word_freq_json FROM analysis_results WHERE post_id = ?"
       )
 
-      // 准备插入或更新 (INSERT OR REPLACE)
+      // Prepare insert or update (INSERT OR REPLACE)
       val upsertStmt = conn.prepareStatement(
         """INSERT OR REPLACE INTO analysis_results
           |(post_id, word_freq_json, sentiment_result, updated_time)
@@ -203,12 +203,12 @@ object SparkStreamingJob {
 
       val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
-      // 遍历每个 post_id
+      // Process each post_id
       for ((postId, newFreqMap) <- aggregatedWordFreq) {
         selectStmt.setString(1, postId)
         val rs = selectStmt.executeQuery()
 
-        // merge 旧的词频
+        // Merge old word frequencies
         val mergedFreqMap: Map[String, Long] =
           if (rs.next()) {
             val oldJson = rs.getString("word_freq_json")
@@ -219,14 +219,14 @@ object SparkStreamingJob {
           }
         rs.close()
 
-        // 转为 JSON
+        // Convert to JSON
         val freqJson = write(mergedFreqMap)
-        // sentiment 结果
+        // Sentiment result
         val sentimentLabel = aggregatedSentiment.getOrElse(postId, "unknown")
 
         upsertStmt.setString(1, postId)
         upsertStmt.setString(2, freqJson)
-        upsertStmt.setString(3, sentimentLabel) // 这里直接存文本标签，也可存score
+        upsertStmt.setString(3, sentimentLabel) // Store text label directly, could also store score
         upsertStmt.setString(4, now)
         upsertStmt.executeUpdate()
       }
@@ -249,7 +249,7 @@ object SparkStreamingJob {
     }
   }
 
-  /** 将旧词频和新词频合并，累加相同word的计数 */
+  /** Merge old and new word frequencies, summing counts for same words */
   def mergeFreqMaps(oldMap: Map[String, Long], newMap: Map[String, Long]): Map[String, Long] = {
     (oldMap.keySet ++ newMap.keySet).map { key =>
       val oldVal = oldMap.getOrElse(key, 0L)
@@ -258,7 +258,7 @@ object SparkStreamingJob {
     }.toMap
   }
 
-  /** 解析 word_freq_json => Map[String, Long] */
+  /** Parse word_freq_json => Map[String, Long] */
   def parseWordFreqJson(jsonStr: String): Map[String, Long] = {
     if (jsonStr == null || jsonStr.trim.isEmpty) return Map.empty
     try {

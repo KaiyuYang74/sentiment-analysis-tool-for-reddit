@@ -2,17 +2,17 @@
 #
 # start_pipeline.sh
 #
-# 先启动 Spark Streaming，再启动 Producer。
-# 可选地清空数据库和删除重建 Kafka topic。
+# Start Spark Streaming first, then start the Producer.
+# Optionally clear the database and delete/recreate Kafka topic.
 
-# --------------- 可选操作：清空数据库 ---------------
-# 是否每次都要重新来过？若只在开发/测试时用，可取消注释以下两行：
+# --------------- Optional: Clear Database ---------------
+# Do you want to start fresh every time? For development/testing only, uncomment these lines:
 # echo "Clearing existing SQLite database..."
 # rm -f /Users/kaiyuyang/Desktop/redditData.db
 
-# --------------- 可选操作：重置/删除 Kafka Topic ---------------
-# 若要删除并重建 Topic，需要先确保 Kafka 已启动，并且知道bootstrap server。
-# 下面操作仅供示例，注意和你的实际集群命令行工具对应：
+# --------------- Optional: Reset/Delete Kafka Topic ---------------
+# To delete and recreate the Topic, ensure Kafka is running and know your bootstrap server.
+# Example below, adjust according to your actual cluster command line tools:
 # KAFKA_TOPIC="reddit_comments"
 # BOOTSTRAP_SERVER="localhost:9092"
 # echo "Deleting Kafka topic $KAFKA_TOPIC..."
@@ -45,7 +45,7 @@ com.softwaremill.sttp.client3:core_2.13:3.8.3 \
 SPARK_STREAMING_PID=$!
 echo "Spark Streaming job started with PID: $SPARK_STREAMING_PID"
 
-# 可以先稍等一下，让Spark完全启动
+# Wait a bit to let Spark fully start
 sleep 5
 
 echo "Starting Producer..."

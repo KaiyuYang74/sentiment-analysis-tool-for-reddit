@@ -1,20 +1,23 @@
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 app = Flask(__name__)
 
-# ---------- 1) 加载模型，准备推理 ----------
+# ---------- 1) Load model for inference ----------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_id = "clapAI/modernBERT-base-multilingual-sentiment"
 tokenizer = AutoTokenizer.from_pretrained(model_id)
-# 注意：如果你的环境CPU不支持float16，可以去掉 torch_dtype=torch.float16
-model = AutoModelForSequenceClassification.from_pretrained(model_id, torch_dtype=torch.float16)
+# Note: If your CPU doesn't support float16, remove torch_dtype=torch.float16
+model = AutoModelForSequenceClassification.from_pretrained(
+    model_id, torch_dtype=torch.float16
+)
 model.to(device)
 model.eval()
 id2label = model.config.id2label
 
-# ---------- 2) 提供 /api/sentiment 接口 ----------
+
+# ---------- 2) Provide /api/sentiment endpoint ----------
 @app.route("/api/sentiment", methods=["POST"])
 def analyze_sentiment():
     data = request.json
@@ -31,7 +34,8 @@ def analyze_sentiment():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ---------- 3) 启动服务 ----------
+
+# ---------- 3) Start server ----------
 if __name__ == "__main__":
-    # 默认监听5001端口，可根据需要调整
+    # Default port 5001, adjust as needed
     app.run(host="0.0.0.0", port=5001, debug=False)
