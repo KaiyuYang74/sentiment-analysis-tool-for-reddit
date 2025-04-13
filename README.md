@@ -96,51 +96,6 @@ node server.js
 
 Navigate to http://localhost:3003/
 
-## System Components Flow Diagram
+## System Components UML diagram
 
-```
-+------------+         +------------------+         +------------------+
-|  Reddit    |         |  RedditFetcher   |         |  SQLite Database |
-|   API      +-------->+ (retrieves data) +-------->+ (stores comments)|
-+------------+         +------------------+         +------------------+
-                                  |
-                                  v
-                           +--------------+
-                           | KafkaProducer|
-                           +--------------+
-                                  |
-                                  v
-                           +--------------+
-                           | Kafka Topic  |
-                           +--------------+
-                                  |
-                                  v
-                      +----------------------+
-                      | SparkStreamingJob   |
-                      | (aggregates & calls |
-                      |  SentimentService)  |
-                      +----------+-----------+
-                                 |
-                                 v
-                     +-----------------------+
-                     |   SentimentService   |
-                     | (Flask Transformer)  |
-                     +-----------+-----------+
-                                 |
-                                 v
-                      +----------------------+
-                      |   Analysis Results  |
-                      +----------+-----------+
-                                 |
-                                 v
-                     +-----------------------+
-                     |       REST API       |
-                     |    (Node/Express)    |
-                     +-----------+-----------+
-                                 |
-                                 v
-                       +-------------------+
-                       |   Web Browser    |
-                       |   (Front-end)    |
-                       +-------------------+
-```
+![UML diagram](UML.jpg)
